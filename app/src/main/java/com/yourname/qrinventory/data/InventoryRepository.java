@@ -12,13 +12,19 @@ import com.yourname.qrinventory.model.Order;
 import com.yourname.qrinventory.model.OrderItem;
 import com.yourname.qrinventory.model.Product;
 import com.yourname.qrinventory.model.TopSeller;
+import com.yourname.qrinventory.utils.CartReservationManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class InventoryRepository {
     private final AppDatabase db;
-    public InventoryRepository(Context ctx) { db = AppDatabase.get(ctx); }
+    private final Context appCtx;
+
+    public InventoryRepository(Context ctx) {
+        this.appCtx = ctx.getApplicationContext();
+        this.db = AppDatabase.get(this.appCtx);
+    }
 
     public interface Callback<T> { void onResult(T result); }
 
@@ -38,41 +44,139 @@ public class InventoryRepository {
     public void updateProduct(Product p) { AppDatabase.IO.execute(() -> db.productDao().update(p)); }
     public void deleteProduct(Product p) { AppDatabase.IO.execute(() -> db.productDao().delete(p)); }
 
-    // ---------- Basket ----------
-    // Called after a QR scan. The callback runs on a background thread, so post to the UI thread in the caller.
+    // ---------- Basket (reserves inventory immediately on add, restores on cancel/remove/expiry) ----------
+    // Called after tapping a product or quick scan. Callback runs on a background thread.
     public void addScannedToBasket(String qr, Callback<String> cb) {
         AppDatabase.IO.execute(() -> {
-            Product p = db.productDao().findByQr(qr);
-            if (p == null) { cb.onResult("Unknown product"); return; }
-            BasketItem existing = db.basketDao().findByProduct(p.id);
-            int newQty = (existing == null ? 0 : existing.quantity) + 1;
-            if (newQty > p.stock) { cb.onResult("Only " + p.stock + " in stock"); return; }
-            if (existing == null) {
-                BasketItem b = new BasketItem();
-                b.productId = p.id; b.quantity = 1;
-                db.basketDao().insert(b);
-            } else {
-                existing.quantity = newQty;
-                db.basketDao().update(existing);
-            }
-            cb.onResult("Added: " + p.name);
+            String msg = db.runInTransaction(() -> {
+                Product p = db.productDao().findByQr(qr);
+                if (p == null) return "Unknown product";
+                if (p.stock <= 0) return p.name + " is out of stock";
+
+                p.stock -= 1;
+                db.productDao().update(p);
+
+                BasketItem existing = db.basketDao().findByProduct(p.id);
+                if (existing == null) {
+                    BasketItem b = new BasketItem();
+                    b.productId = p.id;
+                    b.quantity = 1;
+                    db.basketDao().insert(b);
+                } else {
+                    existing.quantity += 1;
+                    db.basketDao().update(existing);
+                }
+                CartReservationManager.startIfNeeded(appCtx);
+                return "Added: " + p.name;
+            });
+            cb.onResult(msg);
         });
     }
 
     public void changeQuantity(BasketLine line, int newQty) {
-        AppDatabase.IO.execute(() -> {
-            if (newQty <= 0) { db.basketDao().remove(line.basketId); return; }
-            if (newQty > line.stock) return;
-            BasketItem b = new BasketItem();
-            b.id = line.basketId; b.productId = line.productId; b.quantity = newQty;
-            db.basketDao().update(b);
+        AppDatabase.IO.execute(() -> db.runInTransaction(() -> {
+            BasketItem existing = db.basketDao().findById(line.basketId);
+            if (existing == null) return;
+            Product p = db.productDao().findById(existing.productId);
+
+            if (newQty <= 0) {
+                if (p != null) {
+                    p.stock += existing.quantity;
+                    db.productDao().update(p);
+                }
+                db.basketDao().remove(existing.id);
+                if (db.basketDao().getAllNow().isEmpty()) {
+                    CartReservationManager.clear(appCtx);
+                }
+                return;
+            }
+
+            int delta = newQty - existing.quantity;
+            if (delta == 0) return;
+            if (p != null) {
+                if (delta > 0 && delta > p.stock) return;
+                // Subtract when increasing cart qty; add back when decreasing cart qty
+                p.stock -= delta;
+                db.productDao().update(p);
+            }
+            existing.quantity = newQty;
+            db.basketDao().update(existing);
+        }));
+    }
+
+    public void removeFromBasket(long basketId) {
+        AppDatabase.IO.execute(() -> db.runInTransaction(() -> {
+            BasketItem existing = db.basketDao().findById(basketId);
+            if (existing == null) return;
+            Product p = db.productDao().findById(existing.productId);
+            if (p != null) {
+                p.stock += existing.quantity;
+                db.productDao().update(p);
+            }
+            db.basketDao().remove(basketId);
+            if (db.basketDao().getAllNow().isEmpty()) {
+                CartReservationManager.clear(appCtx);
+            }
+        }));
+    }
+
+    public void clearBasket() {
+        AppDatabase.IO.execute(() -> db.runInTransaction(() -> {
+            List<BasketItem> items = db.basketDao().getAllNow();
+            for (BasketItem b : items) {
+                Product p = db.productDao().findById(b.productId);
+                if (p != null) {
+                    p.stock += b.quantity;
+                    db.productDao().update(p);
+                }
+            }
+            db.basketDao().clear();
+            CartReservationManager.clear(appCtx);
+        }));
+    }
+
+    /**
+     * Synchronously expires the cart if the 5-minute reservation has elapsed, restoring stock.
+     * @return true if at least one item was restored from an expired basket.
+     */
+    public static boolean expireCartSync(Context ctx) {
+        Context app = ctx.getApplicationContext();
+        AppDatabase db = AppDatabase.get(app);
+        return db.runInTransaction(() -> {
+            if (!CartReservationManager.isExpired(app)) return false;
+            List<BasketItem> items = db.basketDao().getAllNow();
+            for (BasketItem b : items) {
+                Product p = db.productDao().findById(b.productId);
+                if (p != null) {
+                    p.stock += b.quantity;
+                    db.productDao().update(p);
+                }
+            }
+            db.basketDao().clear();
+            CartReservationManager.clear(app);
+            return !items.isEmpty();
         });
     }
 
-    public void removeFromBasket(long basketId) { AppDatabase.IO.execute(() -> db.basketDao().remove(basketId)); }
-    public void clearBasket() { AppDatabase.IO.execute(() -> db.basketDao().clear()); }
+    public void checkAndSyncReservation(Callback<Boolean> onExpired) {
+        AppDatabase.IO.execute(() -> {
+            if (CartReservationManager.isExpired(appCtx)) {
+                boolean restored = expireCartSync(appCtx);
+                onExpired.onResult(restored);
+                return;
+            }
+            List<BasketItem> items = db.basketDao().getAllNow();
+            if (items.isEmpty() && CartReservationManager.getExpiresAt(appCtx) > 0) {
+                CartReservationManager.clear(appCtx);
+            } else if (!items.isEmpty() && CartReservationManager.getExpiresAt(appCtx) <= 0) {
+                CartReservationManager.startIfNeeded(appCtx);
+            }
+            onExpired.onResult(false);
+        });
+    }
 
     // ---------- Checkout ----------
+    // Stock was already deducted when items were added to the basket, so checkout finalizes the order.
     public void checkout(double discountPercent, Callback<Long> cb) {   // returns order id, or -1 if empty
         AppDatabase.IO.execute(() -> {
             long orderId = db.runInTransaction(() -> {
@@ -82,87 +186,110 @@ public class InventoryRepository {
                 List<OrderItem> orderItems = new ArrayList<>();
                 for (BasketItem b : items) {
                     Product p = db.productDao().findById(b.productId);
+                    if (p == null) continue;
                     subtotal += p.price * b.quantity;
-                    p.stock -= b.quantity;                       // reduce inventory
-                    db.productDao().update(p);
                     OrderItem oi = new OrderItem();
-                    oi.productName = p.name; oi.unitPrice = p.price; oi.quantity = b.quantity;
+                    oi.productName = p.name;
+                    oi.unitPrice = p.price;
+                    oi.quantity = b.quantity;
                     orderItems.add(oi);
+                }
+                if (orderItems.isEmpty()) {
+                    db.basketDao().clear();
+                    CartReservationManager.clear(appCtx);
+                    return -1L;
                 }
                 double discount = subtotal * discountPercent / 100.0;
                 double tax = (subtotal - discount) * 0.05;       // 5% GST
                 Order o = new Order();
                 o.timestamp = System.currentTimeMillis();
-                o.subtotal = subtotal; o.discount = discount; o.tax = tax;
+                o.subtotal = subtotal;
+                o.discount = discount;
+                o.tax = tax;
                 o.total = subtotal - discount + tax;
                 long id = db.orderDao().insertOrder(o);
                 for (OrderItem oi : orderItems) oi.orderId = id;
                 db.orderDao().insertItems(orderItems);
                 db.basketDao().clear();
+                CartReservationManager.clear(appCtx);
                 return id;
             });
             cb.onResult(orderId);   // now runs after the transaction has committed
         });
     }
 
-    // ---------- Used by reports (PDF/CSV), next batch ----------
-    public List<OrderItem> getOrderItems(long orderId) { return db.orderDao().itemsOf(orderId); }   // call on a background thread
-    public Order getOrder(long orderId) { return db.orderDao().findById(orderId); }// call on a background thread
-
+    // ---------- Used by reports (PDF/CSV) ----------
+    public List<OrderItem> getOrderItems(long orderId) { return db.orderDao().itemsOf(orderId); }
+    public Order getOrder(long orderId) { return db.orderDao().findById(orderId); }
 
     // ---------- Scanned-item bottom sheet and re-order ----------
     public void findProductByQr(String qr, Callback<Product> cb) {
         AppDatabase.IO.execute(() -> cb.onResult(db.productDao().findByQr(qr)));
     }
 
-    // Adds `qty` of a product to the basket, never going above the stock level
+    // Adds `qty` of a product to the basket and deducts `qty` from inventory immediately
     public void addQuantityToBasket(String qr, int qty, Callback<String> cb) {
         AppDatabase.IO.execute(() -> {
-            Product p = db.productDao().findByQr(qr);
-            if (p == null) { cb.onResult("Unknown product"); return; }
-            BasketItem existing = db.basketDao().findByProduct(p.id);
-            int current = existing == null ? 0 : existing.quantity;
-            if (current + qty > p.stock) {
-                cb.onResult("Only " + p.stock + " in stock"
-                        + (current > 0 ? " (" + current + " already in your basket)" : ""));
-                return;
-            }
-            if (existing == null) {
-                BasketItem b = new BasketItem();
-                b.productId = p.id; b.quantity = qty;
-                db.basketDao().insert(b);
-            } else {
-                existing.quantity = current + qty;
-                db.basketDao().update(existing);
-            }
-            cb.onResult("Added " + qty + " x " + p.name);
+            String msg = db.runInTransaction(() -> {
+                if (qty <= 0) return "Enter a valid quantity";
+                Product p = db.productDao().findByQr(qr);
+                if (p == null) return "Unknown product";
+                if (qty > p.stock) return "Only " + p.stock + " left in stock";
+
+                p.stock -= qty;
+                db.productDao().update(p);
+
+                BasketItem existing = db.basketDao().findByProduct(p.id);
+                if (existing == null) {
+                    BasketItem b = new BasketItem();
+                    b.productId = p.id;
+                    b.quantity = qty;
+                    db.basketDao().insert(b);
+                } else {
+                    existing.quantity += qty;
+                    db.basketDao().update(existing);
+                }
+                CartReservationManager.startIfNeeded(appCtx);
+                return "Added " + qty + " x " + p.name;
+            });
+            cb.onResult(msg);
         });
     }
 
-    // Puts the items of an old order back into the basket (skips anything sold out or removed)
+    // Puts the items of an old order back into the basket and reserves available stock
     public void reorder(long orderId, Callback<String> cb) {
         AppDatabase.IO.execute(() -> {
-            List<OrderItem> items = db.orderDao().itemsOf(orderId);
-            int added = 0, skipped = 0;
-            for (OrderItem oi : items) {
-                Product p = db.productDao().findByName(oi.productName);
-                if (p == null || p.stock <= 0) { skipped++; continue; }
-                BasketItem existing = db.basketDao().findByProduct(p.id);
-                int current = existing == null ? 0 : existing.quantity;
-                int target = Math.min(p.stock, current + oi.quantity);
-                if (target <= current) { skipped++; continue; }
-                if (existing == null) {
-                    BasketItem b = new BasketItem();
-                    b.productId = p.id; b.quantity = target;
-                    db.basketDao().insert(b);
-                } else {
-                    existing.quantity = target;
-                    db.basketDao().update(existing);
+            String msg = db.runInTransaction(() -> {
+                List<OrderItem> items = db.orderDao().itemsOf(orderId);
+                int added = 0, skipped = 0;
+                for (OrderItem oi : items) {
+                    Product p = db.productDao().findByName(oi.productName);
+                    if (p == null || p.stock <= 0) { skipped++; continue; }
+                    int toAdd = Math.min(p.stock, oi.quantity);
+                    if (toAdd <= 0) { skipped++; continue; }
+
+                    p.stock -= toAdd;
+                    db.productDao().update(p);
+
+                    BasketItem existing = db.basketDao().findByProduct(p.id);
+                    if (existing == null) {
+                        BasketItem b = new BasketItem();
+                        b.productId = p.id;
+                        b.quantity = toAdd;
+                        db.basketDao().insert(b);
+                    } else {
+                        existing.quantity += toAdd;
+                        db.basketDao().update(existing);
+                    }
+                    added++;
                 }
-                added++;
-            }
-            String msg = added + " item(s) added to your basket";
-            if (skipped > 0) msg += ", " + skipped + " unavailable";
+                if (added > 0) {
+                    CartReservationManager.startIfNeeded(appCtx);
+                }
+                String result = added + " item(s) added to your basket";
+                if (skipped > 0) result += ", " + skipped + " unavailable";
+                return result;
+            });
             cb.onResult(msg);
         });
     }

@@ -60,4 +60,5 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     implementation("androidx.print:print:1.0.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("com.razorpay:checkout:1.6.41")
 }

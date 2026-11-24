@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,6 +32,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 import com.yourname.qrinventory.R;
 import com.yourname.qrinventory.model.BasketLine;
+import com.yourname.qrinventory.utils.CartReservationManager;
 import com.yourname.qrinventory.utils.ShakeDetector;
 import com.yourname.qrinventory.viewmodel.BasketViewModel;
 
@@ -43,7 +46,7 @@ public class BasketFragment extends Fragment {
 
     private BasketViewModel vm;
     private BasketAdapter adapter;
-    private TextView tvSubtotal, empty;
+    private TextView tvSubtotal, empty, tvCartTimer;
     private Button btnCheckout;
     private View checkoutBar;
     private List<BasketLine> latest = new ArrayList<>();
@@ -54,6 +57,17 @@ public class BasketFragment extends Fragment {
     private ShakeDetector shake;
     private AlertDialog clearDialog;
     private int shownCount = 0;
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
+    private boolean expiryRequested = false;
+    private final Runnable timerRunnable = new Runnable() {
+        @Override public void run() {
+            if (!isAdded()) return;
+            refreshTimerUi();
+            if (shownCount > 0) {
+                timerHandler.postDelayed(this, 1000L);
+            }
+        }
+    };
 
     public BasketFragment() { super(R.layout.fragment_basket); }
 
@@ -63,6 +77,7 @@ public class BasketFragment extends Fragment {
         vm = new ViewModelProvider(requireActivity()).get(BasketViewModel.class);
         tvSubtotal = view.findViewById(R.id.tv_subtotal);
         empty = view.findViewById(R.id.tv_empty);
+        tvCartTimer = view.findViewById(R.id.tv_cart_timer);
         btnCheckout = view.findViewById(R.id.btn_checkout);
         checkoutBar = view.findViewById(R.id.checkout_bar);
 
@@ -116,12 +131,22 @@ public class BasketFragment extends Fragment {
         super.onResume();
         Sensor acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         if (acc != null) sensorManager.registerListener(shake, acc, SensorManager.SENSOR_DELAY_UI);
+        expiryRequested = false;
+        vm.checkReservation(expired -> {
+            if (Boolean.TRUE.equals(expired) && isAdded()) {
+                requireActivity().runOnUiThread(() ->
+                        snack("Reservation expired (5 min) — items returned to stock"));
+            }
+        });
+        timerHandler.removeCallbacks(timerRunnable);
+        timerHandler.post(timerRunnable);
     }
 
     @Override
     public void onPause() {
         super.onPause();
         sensorManager.unregisterListener(shake);
+        timerHandler.removeCallbacks(timerRunnable);
     }
 
     private void confirmClear() {
@@ -129,9 +154,9 @@ public class BasketFragment extends Fragment {
         if (clearDialog != null && clearDialog.isShowing()) return;   // ignore repeated shakes
         clearDialog = new MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Clear basket?")
-                .setMessage("Remove all " + shownCount + " item(s) from your basket?")
+                .setMessage("Remove all " + shownCount + " item(s) and return them to inventory?")
                 .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear", (d, w) -> { vm.clear(); snack("Basket cleared"); })
+                .setPositiveButton("Clear", (d, w) -> { vm.clear(); snack("Basket cleared — items returned to inventory"); })
                 .show();
     }
 
@@ -152,11 +177,47 @@ public class BasketFragment extends Fragment {
         empty.setVisibility(shown.isEmpty() ? View.VISIBLE : View.GONE);
         tvSubtotal.setText(String.format(Locale.getDefault(), "Subtotal: ₹%.2f", subtotal));
         btnCheckout.setEnabled(!shown.isEmpty());
+        refreshTimerUi();
+        if (!shown.isEmpty() && isResumed()) {
+            timerHandler.removeCallbacks(timerRunnable);
+            timerHandler.postDelayed(timerRunnable, 1000L);
+        }
+    }
+
+    private void refreshTimerUi() {
+        if (tvCartTimer == null || !isAdded()) return;
+        Context ctx = requireContext();
+        if (shownCount == 0) {
+            expiryRequested = false;
+            tvCartTimer.setVisibility(View.GONE);
+            return;
+        }
+        if (CartReservationManager.isExpired(ctx)) {
+            tvCartTimer.setVisibility(View.GONE);
+            if (!expiryRequested) {
+                expiryRequested = true;
+                vm.checkReservation(expired -> {
+                    if (Boolean.TRUE.equals(expired) && isAdded()) {
+                        requireActivity().runOnUiThread(() ->
+                                snack("Reservation expired (5 min) — items returned to stock"));
+                    }
+                });
+            }
+            return;
+        }
+        if (CartReservationManager.getExpiresAt(ctx) <= 0L) {
+            CartReservationManager.startIfNeeded(ctx);
+        }
+        long rem = CartReservationManager.getRemainingMillis(ctx);
+        tvCartTimer.setText("Reserved for " + CartReservationManager.formatMmSs(rem)
+                + " — pay before timer expires");
+        tvCartTimer.setVisibility(View.VISIBLE);
     }
 
     private void changeQty(BasketLine line, int q) {
+        int maxAvailable = line.quantity + line.stock;
         if (q <= 0) removeWithUndo(line);
-        else if (q > line.stock) snack("Only " + line.stock + " in stock");
+        else if (q > maxAvailable) snack(line.stock <= 0 ? "No more stock available" : "Only " + line.stock + " more in stock");
         else vm.changeQuantity(line, q);
     }
 

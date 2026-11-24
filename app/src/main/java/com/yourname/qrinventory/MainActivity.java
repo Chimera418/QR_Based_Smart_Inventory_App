@@ -16,8 +16,11 @@ import androidx.navigation.ui.NavigationUI;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.yourname.qrinventory.data.AppDatabase;
+import com.yourname.qrinventory.data.InventoryRepository;
 import com.yourname.qrinventory.ui.LoginActivity;
 import com.yourname.qrinventory.utils.SessionManager;
+
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -51,5 +54,17 @@ public class MainActivity extends AppCompatActivity {
 
         BottomNavigationView bottom = findViewById(R.id.bottom_nav);
         NavigationUI.setupWithNavController(bottom, nav);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        new InventoryRepository(this).checkAndSyncReservation(expired -> {
+            if (Boolean.TRUE.equals(expired)) {
+                runOnUiThread(() -> Toast.makeText(this,
+                        "Cart reservation (5 min) expired — items returned to stock",
+                        Toast.LENGTH_LONG).show());
+            }
+        });
     }
 }

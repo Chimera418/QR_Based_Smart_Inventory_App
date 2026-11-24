@@ -50,4 +50,7 @@ public class BasketViewModel extends AndroidViewModel {
     public void remove(long basketId) { repo.removeFromBasket(basketId); }
     public void clear() { repo.clearBasket(); }
     public void checkout(double discountPercent) { repo.checkout(discountPercent, id -> orderResult.postValue(id)); }
+    public void checkReservation(InventoryRepository.Callback<Boolean> onExpired) {
+        repo.checkAndSyncReservation(onExpired);
+    }
 }

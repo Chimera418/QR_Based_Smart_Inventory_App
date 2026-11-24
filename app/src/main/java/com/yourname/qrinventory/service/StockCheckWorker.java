@@ -7,6 +7,7 @@ import androidx.work.WorkerParameters;
 import com.yourname.qrinventory.data.AppDatabase;
 import com.yourname.qrinventory.model.Product;
 import com.yourname.qrinventory.utils.AppSettings;
+import com.yourname.qrinventory.utils.SessionManager;
 import java.util.List;
 
 public class StockCheckWorker extends Worker {
@@ -19,6 +20,7 @@ public class StockCheckWorker extends Worker {
     @NonNull @Override
     public Result doWork() {
         Context ctx = getApplicationContext();
+        if (!SessionManager.isAdmin(ctx)) return Result.success();
         boolean manual = getInputData().getBoolean(KEY_MANUAL, false);
         // The scheduled run respects the Settings switch; the "check now" button always runs
         if (!manual && !AppSettings.alertsEnabled(ctx)) return Result.success();

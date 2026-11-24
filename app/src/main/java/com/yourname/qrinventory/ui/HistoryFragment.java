@@ -64,20 +64,43 @@ public class HistoryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         Context ctx = requireContext();
+        boolean admin = SessionManager.isAdmin(ctx);
         ReportViewModel vm = new ViewModelProvider(this).get(ReportViewModel.class);
 
-        // Charts (CO5 data visualisation)
-        PieChart pie = view.findViewById(R.id.pie_chart);
-        BarChart bar = view.findViewById(R.id.bar_chart);
-        LineChart line = view.findViewById(R.id.line_chart);
-        pie.setTouchEnabled(false);    // so the page scrolls smoothly over the charts
-        bar.setTouchEnabled(false);
-        line.setTouchEnabled(false);
-        vm.stockByCategory.observe(getViewLifecycleOwner(), d -> ChartHelper.showStockPie(pie, d));
-        vm.topSellers.observe(getViewLifecycleOwner(), d -> ChartHelper.showTopSellersBar(bar, d));
-        vm.dailySales.observe(getViewLifecycleOwner(), d -> ChartHelper.showDailySalesLine(line, d));
+        View adminReportsGroup = view.findViewById(R.id.admin_reports_group);
+        adminReportsGroup.setVisibility(admin ? View.VISIBLE : View.GONE);
 
-        // Order history
+        if (admin) {
+            // Charts (admin-only analytics)
+            PieChart pie = view.findViewById(R.id.pie_chart);
+            BarChart bar = view.findViewById(R.id.bar_chart);
+            LineChart line = view.findViewById(R.id.line_chart);
+            pie.setTouchEnabled(false);    // so the page scrolls smoothly over the charts
+            bar.setTouchEnabled(false);
+            line.setTouchEnabled(false);
+            vm.stockByCategory.observe(getViewLifecycleOwner(), d -> ChartHelper.showStockPie(pie, d));
+            vm.topSellers.observe(getViewLifecycleOwner(), d -> ChartHelper.showTopSellersBar(bar, d));
+            vm.dailySales.observe(getViewLifecycleOwner(), d -> ChartHelper.showDailySalesLine(line, d));
+
+            // Reports, CSV import/export, and background stock/expiry alert checks (admin-only)
+            view.findViewById(R.id.btn_export_inventory).setOnClickListener(v ->
+                    ReportExporter.exportInventoryCsv(ctx, (file, err) ->
+                            deliver(file, err, "text/csv", "Inventory export")));
+            view.findViewById(R.id.btn_export_low).setOnClickListener(v ->
+                    ReportExporter.exportLowStockCsv(ctx, (file, err) ->
+                            deliver(file, err, "text/csv", "Low stock report")));
+            view.findViewById(R.id.btn_import).setOnClickListener(v -> importPicker.launch("*/*"));
+            view.findViewById(R.id.btn_refresh_alerts).setOnClickListener(v -> {
+                if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(ctx,
+                        Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                    notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS);
+                } else {
+                    runAlertCheck();
+                }
+            });
+        }
+
+        // Order history (visible to both customers and admin)
         TextView none = view.findViewById(R.id.tv_no_orders);
         RecyclerView rv = view.findViewById(R.id.rv_orders);
         rv.setLayoutManager(new LinearLayoutManager(ctx));
@@ -87,27 +110,6 @@ public class HistoryFragment extends Fragment {
         vm.orders.observe(getViewLifecycleOwner(), list -> {
             adapter.setItems(list);
             none.setVisibility(list == null || list.isEmpty() ? View.VISIBLE : View.GONE);
-        });
-
-        // Reports, data sharing and background work buttons
-        view.findViewById(R.id.btn_export_inventory).setOnClickListener(v ->
-                ReportExporter.exportInventoryCsv(ctx, (file, err) ->
-                        deliver(file, err, "text/csv", "Inventory export")));
-        view.findViewById(R.id.btn_export_low).setOnClickListener(v ->
-                ReportExporter.exportLowStockCsv(ctx, (file, err) ->
-                        deliver(file, err, "text/csv", "Low stock report")));
-
-        View btnImport = view.findViewById(R.id.btn_import);
-        btnImport.setVisibility(SessionManager.isAdmin(ctx) ? View.VISIBLE : View.GONE);
-        btnImport.setOnClickListener(v -> importPicker.launch("*/*"));
-
-        view.findViewById(R.id.btn_refresh_alerts).setOnClickListener(v -> {
-            if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(ctx,
-                    Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS);
-            } else {
-                runAlertCheck();
-            }
         });
     }
 

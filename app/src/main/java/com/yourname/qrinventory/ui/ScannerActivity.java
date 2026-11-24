@@ -60,6 +60,8 @@ import java.util.concurrent.Executors;
 public class ScannerActivity extends AppCompatActivity implements SensorEventListener {
 
     private static final String TAG = "ScannerActivity";
+    public static final String EXTRA_PICK_MODE = "pick_mode";
+    public static final String EXTRA_PAY_SCAN_MODE = "pay_scan_mode";
 
     private BasketViewModel vm;
     private PreviewView previewView;
@@ -72,6 +74,7 @@ public class ScannerActivity extends AppCompatActivity implements SensorEventLis
     private final ExecutorService cameraExecutor = Executors.newSingleThreadExecutor();
     private boolean torchOn = false;
     private boolean pickMode;
+    private boolean payScanMode;
     private String lastCode = "";
     private boolean sheetOpen = false;
     private long lastTime = 0;
@@ -108,9 +111,13 @@ public class ScannerActivity extends AppCompatActivity implements SensorEventLis
         lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
         if (lightSensor == null) tvLight.setText("No light sensor on this device");
 
-        pickMode = getIntent().getBooleanExtra("pick_mode", false);
+        pickMode = getIntent().getBooleanExtra(EXTRA_PICK_MODE, false);
+        payScanMode = getIntent().getBooleanExtra(EXTRA_PAY_SCAN_MODE, false);
         BarcodeScannerOptions.Builder ob = new BarcodeScannerOptions.Builder();
-        if (pickMode) {
+        if (payScanMode) {
+            ob.setBarcodeFormats(Barcode.FORMAT_QR_CODE);
+            tvResult.setText("Point the camera at a payment / UPI QR code");
+        } else if (pickMode) {
             // real packets use 1D barcodes (EAN/UPC), not QR
             ob.setBarcodeFormats(Barcode.FORMAT_QR_CODE, Barcode.FORMAT_EAN_13, Barcode.FORMAT_EAN_8,
                     Barcode.FORMAT_UPC_A, Barcode.FORMAT_UPC_E);
@@ -263,7 +270,8 @@ public class ScannerActivity extends AppCompatActivity implements SensorEventLis
         lastCode = code;
         lastTime = now;
         Log.d(TAG, "Scanned: " + code);
-        if (pickMode) {
+        if (pickMode || payScanMode) {
+            previewView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
             setResult(RESULT_OK, new Intent().putExtra("code", code));
             finish();
             return;

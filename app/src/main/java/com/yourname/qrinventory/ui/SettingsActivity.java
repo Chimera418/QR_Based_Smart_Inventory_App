@@ -36,9 +36,14 @@ public class SettingsActivity extends AppCompatActivity {
         setSupportActionBar(findViewById(R.id.toolbar));
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        boolean admin = SessionManager.isAdmin(this);
         TextView account = findViewById(R.id.tv_account);
         account.setText(SessionManager.getName(this) + "\n" + SessionManager.getEmail(this) + "\n"
-                + (SessionManager.isAdmin(this) ? "Store manager (Admin)" : "Customer"));
+                + (admin ? "Store manager (Admin)" : "Customer"));
+
+        View adminGroup = findViewById(R.id.admin_settings_group);
+        adminGroup.setVisibility(admin ? View.VISIBLE : View.GONE);
+        if (!admin) return;
 
         MaterialSwitch alerts = findViewById(R.id.switch_alerts);
         alerts.setChecked(AppSettings.alertsEnabled(this));

@@ -14,6 +14,7 @@ public interface BasketDao {
     LiveData<List<BasketLine>> getLines();
 
     @Query("SELECT * FROM basket_items WHERE productId = :pid LIMIT 1") BasketItem findByProduct(long pid);
+    @Query("SELECT * FROM basket_items WHERE id = :id LIMIT 1") BasketItem findById(long id);
     @Insert long insert(BasketItem i);
     @Update void update(BasketItem i);
     @Query("DELETE FROM basket_items WHERE id = :id") void remove(long id);

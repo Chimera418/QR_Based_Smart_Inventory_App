@@ -1,80 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Pay with UPI"
-        android:textAppearance="?attr/textAppearanceTitleLarge" />
-
-    <TextView
-        android:id="@+id/tv_pay_amount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:textAppearance="?attr/textAppearanceHeadlineMedium" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Paying QR Mart"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
+    android:layout_height="wrap_content">
 
     <LinearLayout
-        android:id="@+id/pay_form"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pay using"
-            android:textAppearance="?attr/textAppearanceTitleSmall" />
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_apps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:selectionRequired="true"
-            app:singleSelection="true">
+            android:text="Pay with UPI ID"
+            android:textAppearance="?attr/textAppearanceTitleLarge" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_gpay"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="Google Pay" />
+        <TextView
+            android:id="@+id/tv_pay_amount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_phonepe"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="PhonePe" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_paytm"
-                style="@style/Widget.Material3.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Paytm" />
-        </com.google.android.material.chip.ChipGroup>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Opens your installed UPI app (GPay, PhonePe, Paytm, BHIM)"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_upi"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="UPI ID (e.g. name@okbank)">
+            android:layout_marginTop="16dp"
+            android:hint="Merchant / Payee UPI ID (e.g. store@okbank)">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_upi"
@@ -84,58 +45,28 @@
                 android:singleLine="true" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_payee_name"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Payee name (optional)">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_payee_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName"
+                android:singleLine="true"
+                android:text="QR Mart" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_pay_now"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Pay now" />
+            android:text="Open UPI App &amp; Pay" />
     </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/pay_progress"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="32dp"
-        android:visibility="gone">
-
-        <com.google.android.material.progressindicator.CircularProgressIndicator
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:indeterminate="true" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Processing payment..."
-            android:textAppearance="?attr/textAppearanceBodyLarge" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/pay_success"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="24dp"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Payment successful"
-            android:textAppearance="?attr/textAppearanceTitleLarge"
-            android:textColor="?attr/colorPrimary" />
-
-        <TextView
-            android:id="@+id/tv_txn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceBodyMedium" />
-    </LinearLayout>
-</LinearLayout>
+</androidx.core.widget.NestedScrollView>

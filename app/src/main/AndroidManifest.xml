@@ -14,6 +14,17 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" android:host="pay" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="upi" />
+        </intent>
+    </queries>
+
     <application
         android:name=".InventoryApp"
         android:allowBackup="true"
@@ -87,6 +98,10 @@
             android:name=".service.BackupService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <meta-data
+            android:name="com.razorpay.ApiKey"
+            android:value="rzp_test_THeRsyfbR2l4r2" />
     </application>
 
 </manifest>

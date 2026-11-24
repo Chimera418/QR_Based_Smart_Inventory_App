@@ -48,64 +48,71 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Alerts"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-            <com.google.android.material.materialswitch.MaterialSwitch
-                android:id="@+id/switch_alerts"
+            <LinearLayout
+                android:id="@+id/admin_settings_group"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Low-stock and expiry alerts" />
+                android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Checked in the background every 12 hours"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Alerts"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-            <TextView
-                android:id="@+id/tv_days"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:textAppearance="?attr/textAppearanceBodyMedium" />
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switch_alerts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Low-stock and expiry alerts" />
 
-            <com.google.android.material.slider.Slider
-                android:id="@+id/slider_days"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:stepSize="1"
-                android:valueFrom="1"
-                android:valueTo="14"
-                android:value="3" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Checked in the background every 12 hours"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="Backup"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                <TextView
+                    android:id="@+id/tv_days"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium" />
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_backup"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Back up inventory now" />
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/slider_days"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:stepSize="1"
+                    android:valueFrom="1"
+                    android:valueTo="14"
+                    android:value="3" />
 
-            <TextView
-                android:id="@+id/tv_backup_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="No backup yet"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="Backup"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_backup"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Back up inventory now" />
+
+                <TextView
+                    android:id="@+id/tv_backup_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="No backup yet"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="wrap_content"

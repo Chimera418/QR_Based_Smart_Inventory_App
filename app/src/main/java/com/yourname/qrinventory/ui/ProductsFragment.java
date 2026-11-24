@@ -64,6 +64,10 @@ public class ProductsFragment extends Fragment {
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
         BasketViewModel basketVm = new ViewModelProvider(requireActivity()).get(BasketViewModel.class);
         adapter = new ProductAdapter(p -> {
+            if (p.stock <= 0) {
+                Toast.makeText(requireContext(), p.name + " is out of stock", Toast.LENGTH_SHORT).show();
+                return;
+            }
             basketVm.onScanned(p.qrCode);
             Toast.makeText(requireContext(), "Added " + p.name, Toast.LENGTH_SHORT).show();
         });
@@ -101,6 +105,7 @@ public class ProductsFragment extends Fragment {
             public void onCreateMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
                 inflater.inflate(R.menu.products_menu, menu);
                 menu.findItem(R.id.action_print_qr).setVisible(admin);
+                menu.findItem(R.id.sort_stock).setVisible(admin);
                 menu.findItem(sortMode).setChecked(true);
                 SearchView sv = (SearchView) menu.findItem(R.id.action_search).getActionView();
                 searchItem = menu.findItem(R.id.action_search);

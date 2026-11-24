@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="96dp"
+    android:height="96dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Squircle brand badge -->
+    <path android:pathData="M24,6 h60 a18,18 0 0 1 18,18 v60 a18,18 0 0 1 -18,18 h-60 a18,18 0 0 1 -18,-18 v-60 a18,18 0 0 1 18,-18 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="102"
+                android:endY="102"
+                android:startX="6"
+                android:startY="6"
+                android:type="linear">
+                <item
+                    android:color="#388E3C"
+                    android:offset="0.0" />
+                <item
+                    android:color="#2E7D32"
+                    android:offset="0.5" />
+                <item
+                    android:color="#1B5E20"
+                    android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Subtle inner glow -->
+    <path
+        android:fillColor="#12FFFFFF"
+        android:pathData="M54,54 m-38,0 a38,38 0 1,0 76,0 a38,38 0 1,0 -76,0" />
+
+    <!-- Subtle shadow behind QR grid -->
+    <path
+        android:fillColor="#18000000"
+        android:pathData="M35,36 h38 a3,3 0 0 1 3,3 v34 a3,3 0 0 1 -3,3 h-38 a3,3 0 0 1 -3,-3 v-34 a3,3 0 0 1 3,-3 z" />
+
+    <!-- Warm amber scanner viewfinder corner brackets -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M25,38 L25,29 Q25,25 29,25 L38,25 M70,25 L79,25 Q83,25 83,29 L83,38 M25,70 L25,79 Q25,83 29,83 L38,83 M70,83 L79,83 Q83,83 83,79 L83,70"
+        android:strokeColor="#FFB74D"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="3.8" />
+
+    <!-- 3 QR finder squares -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M37.5,35 h11 a2.5,2.5 0 0 1 2.5,2.5 v11 a2.5,2.5 0 0 1 -2.5,2.5 h-11 a2.5,2.5 0 0 1 -2.5,-2.5 v-11 a2.5,2.5 0 0 1 2.5,-2.5 z M39,38 h8 a1,1 0 0 1 1,1 v8 a1,1 0 0 1 -1,1 h-8 a1,1 0 0 1 -1,-1 v-8 a1,1 0 0 1 1,-1 z M41.5,40.5 h3 a1,1 0 0 1 1,1 v3 a1,1 0 0 1 -1,1 h-3 a1,1 0 0 1 -1,-1 v-3 a1,1 0 0 1 1,-1 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M59.5,35 h11 a2.5,2.5 0 0 1 2.5,2.5 v11 a2.5,2.5 0 0 1 -2.5,2.5 h-11 a2.5,2.5 0 0 1 -2.5,-2.5 v-11 a2.5,2.5 0 0 1 2.5,-2.5 z M61,38 h8 a1,1 0 0 1 1,1 v8 a1,1 0 0 1 -1,1 h-8 a1,1 0 0 1 -1,-1 v-8 a1,1 0 0 1 1,-1 z M63.5,40.5 h3 a1,1 0 0 1 1,1 v3 a1,1 0 0 1 -1,1 h-3 a1,1 0 0 1 -1,-1 v-3 a1,1 0 0 1 1,-1 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M37.5,57 h11 a2.5,2.5 0 0 1 2.5,2.5 v11 a2.5,2.5 0 0 1 -2.5,2.5 h-11 a2.5,2.5 0 0 1 -2.5,-2.5 v-11 a2.5,2.5 0 0 1 2.5,-2.5 z M39,60 h8 a1,1 0 0 1 1,1 v8 a1,1 0 0 1 -1,1 h-8 a1,1 0 0 1 -1,-1 v-8 a1,1 0 0 1 1,-1 z M41.5,62.5 h3 a1,1 0 0 1 1,1 v3 a1,1 0 0 1 -1,1 h-3 a1,1 0 0 1 -1,-1 v-3 a1,1 0 0 1 1,-1 z" />
+
+    <!-- Bottom-Right QR data modules (white) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M58,57 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M63.75,57 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M58,62.75 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M69.5,62.75 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M58,68.5 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M63.75,68.5 h8.25 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-8.25 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z" />
+
+    <!-- Bottom-Right QR accent modules (warm amber) -->
+    <path
+        android:fillColor="#FFB74D"
+        android:pathData="M69.5,57 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z M63.75,62.75 h2.5 a1,1 0 0 1 1,1 v2.5 a1,1 0 0 1 -1,1 h-2.5 a1,1 0 0 1 -1,-1 v-2.5 a1,1 0 0 1 1,-1 z" />
+</vector>
