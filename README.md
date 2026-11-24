@@ -6,7 +6,7 @@ Mobile App Development end-semester project. Team: Ashith (backend, data, report
 
 ## Features
 - **Shopper (Customer):**
-  - Browse, search (text or voice), and filter products by category and sort order.
+  - Browse, search, and filter products by category and sort order.
   - Scan a product QR code and pick a quantity in a bottom sheet; stock is **reserved immediately** in inventory when items are added to the basket.
   - **5-minute cart & payment timer:** items held in the basket have a live 5-minute countdown on both the Basket and Checkout screens. If unpaid when time expires (or if you cancel the order / clear / remove items), all reserved quantities are automatically returned to inventory.
   - Edit the basket (stepper, swipe to delete with undo, shake to clear) and checkout with optional 10% coupon discount + 5% GST.
